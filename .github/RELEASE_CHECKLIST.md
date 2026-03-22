@@ -3,6 +3,8 @@
 - [ ] Update `pubspec.yaml` version and confirm it matches `native/Cargo.toml`.
 - [ ] Update `CHANGELOG.md`.
 - [ ] Confirm `README.md` matches the current implementation.
+- [ ] If this is the first release, publish `1.0.0` manually with `dart pub publish` before enabling automated publishing on pub.dev.
+- [ ] After the first manual publish, enable GitHub Actions publishing on pub.dev for `arcas0803/just_crypto` with tag pattern `v{{version}}`.
 - [ ] Run `dart pub get`.
 - [ ] Run `dart analyze`.
 - [ ] Run `dart test`.

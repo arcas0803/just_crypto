@@ -1,15 +1,15 @@
 name: Publish to pub.dev
 
 on:
-  workflow_dispatch:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
   publish:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
 
     steps:
@@ -18,6 +18,8 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -29,8 +31,8 @@ jobs:
         run: dart pub get
 
       - name: Validate Rust backend
+        working-directory: native
         run: |
-          cd native
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
           cargo build
@@ -49,18 +51,15 @@ jobs:
           test -f CHANGELOG.md
           test -f README.md
 
-      - name: Configure pub.dev credentials
-        env:
-          PUB_DEV_CREDENTIALS: ${{ secrets.PUB_DEV_CREDENTIALS }}
+      - name: Verify version matches tag
         run: |
-          if [ -z "$PUB_DEV_CREDENTIALS" ]; then
-            echo "Missing PUB_DEV_CREDENTIALS secret"
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          if [ "$TAG_VERSION" != "$PUBSPEC_VERSION" ]; then
+            echo "Error: tag version ($TAG_VERSION) does not match pubspec version ($PUBSPEC_VERSION)"
             exit 1
           fi
-          mkdir -p "$HOME/.pub-cache"
-          printf '%s' "$PUB_DEV_CREDENTIALS" > "$HOME/.pub-cache/credentials.json"
+          echo "Version verified: $TAG_VERSION"
 
-      - name: Publish
-        env:
-          PUB_ENVIRONMENT: bot.github-actions
+      - name: Publish to pub.dev
         run: dart pub publish --force

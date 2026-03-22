@@ -6,27 +6,43 @@ on:
       - main
       - master
   pull_request:
+    branches:
+      - main
+      - master
 
 jobs:
-  rust-native:
-    name: Rust Native (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
-    runs-on: ${{ matrix.os }}
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze project source
+        run: dart analyze --fatal-infos
+
+  rust-native:
+    name: Rust Native
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89.0
           components: rustfmt, clippy
@@ -47,42 +63,77 @@ jobs:
         working-directory: native
         run: cargo test
 
-  dart-package:
-    name: Dart Package (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
-    runs-on: ${{ matrix.os }}
+  test:
+    name: Test and Coverage
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89.0
 
       - name: Install dependencies
         run: dart pub get
 
-      - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed .
+      - name: Activate coverage tools
+        run: dart pub global activate coverage
 
-      - name: Analyze
-        run: dart analyze .
+      - name: Run tests with coverage
+        run: |
+          dart test --coverage=coverage
+          dart pub global run coverage:format_coverage \
+            --lcov \
+            --in=coverage \
+            --out=coverage/lcov.info \
+            --report-on=lib
 
-      - name: Run tests
-        run: dart test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Check coverage
+        shell: bash
+        run: |
+          LINES=$(grep -E '^DA:' coverage/lcov.info | wc -l | tr -d ' ')
+          HITS=$(grep -E '^DA:[0-9]+,[1-9]' coverage/lcov.info | wc -l | tr -d ' ')
+          if [ "$LINES" -eq 0 ]; then
+            echo 'Error: no coverage lines found'
+            exit 1
+          fi
+
+          COVERAGE=$(awk -v hits="$HITS" -v lines="$LINES" 'BEGIN { printf "%.2f", (hits * 100 / lines) }')
+          echo "Coverage: ${COVERAGE}%"
+
+  dry-run:
+    name: Publish Dry Run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.89.0
+
+      - name: Install dependencies
+        run: dart pub get
 
       - name: Run example
         run: dart run example/just_crypto_example.dart
