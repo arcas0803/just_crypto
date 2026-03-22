@@ -4,14 +4,14 @@ use sha2::Digest;
 
 pub enum StreamState {
     Sha256(sha2::Sha256),
-    Blake3(blake3::Hasher),
+    Blake3(Box<blake3::Hasher>),
     HmacSha256(hmac::Hmac<sha2::Sha256>),
 }
 
 pub fn init_hash(algorithm: Algorithm) -> Result<StreamState, i32> {
     match algorithm {
         Algorithm::Sha256 => Ok(StreamState::Sha256(sha2::Sha256::new())),
-        Algorithm::Blake3 => Ok(StreamState::Blake3(blake3::Hasher::new())),
+        Algorithm::Blake3 => Ok(StreamState::Blake3(Box::new(blake3::Hasher::new()))),
         _ => Err(crate::errors::JC_ERR_UNSUPPORTED_ALGO),
     }
 }

@@ -20,8 +20,14 @@ pub struct JCContext {
     _private: [u8; 0],
 }
 
+/// Encrypts a message using the selected algorithm.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_encrypt(
+pub unsafe extern "C" fn jc_encrypt(
     alg: i32,
     msg_ptr: *const u8,
     msg_len: usize,
@@ -57,8 +63,14 @@ pub extern "C" fn jc_encrypt(
     algorithms::encrypt(algorithm, message, key, nonce, aad)
 }
 
+/// Decrypts a message using the selected algorithm.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_decrypt(
+pub unsafe extern "C" fn jc_decrypt(
     alg: i32,
     msg_ptr: *const u8,
     msg_len: usize,
@@ -94,8 +106,14 @@ pub extern "C" fn jc_decrypt(
     algorithms::decrypt(algorithm, message, key, nonce, aad)
 }
 
+/// Signs a message with the selected private key.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_sign(
+pub unsafe extern "C" fn jc_sign(
     alg: i32,
     msg_ptr: *const u8,
     msg_len: usize,
@@ -119,8 +137,14 @@ pub extern "C" fn jc_sign(
     algorithms::sign(algorithm, message, priv_key)
 }
 
+/// Verifies a signature against the provided message and public key.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_verify(
+pub unsafe extern "C" fn jc_verify(
     alg: i32,
     msg_ptr: *const u8,
     msg_len: usize,
@@ -150,8 +174,14 @@ pub extern "C" fn jc_verify(
     algorithms::verify(algorithm, message, sig, pub_key)
 }
 
+/// Derives key material using the selected KDF.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_derive_key(
+pub unsafe extern "C" fn jc_derive_key(
     alg: i32,
     input_ptr: *const u8,
     input_len: usize,
@@ -201,8 +231,14 @@ pub extern "C" fn jc_generate_key_pair(alg: i32) -> JCResult {
     algorithms::generate_key_pair(algorithm)
 }
 
+/// Derives a shared secret from a private and a public key.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_shared_secret(
+pub unsafe extern "C" fn jc_shared_secret(
     alg: i32,
     private_key_ptr: *const u8,
     private_key_len: usize,
@@ -226,8 +262,14 @@ pub extern "C" fn jc_shared_secret(
     algorithms::derive_shared_secret(algorithm, private_key, public_key)
 }
 
+/// Hashes a message using the selected algorithm.
+///
+/// # Safety
+///
+/// If `msg_ptr` is non-null, it must reference `msg_len` readable bytes for the
+/// duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_hash_message(alg: i32, msg_ptr: *const u8, msg_len: usize) -> JCResult {
+pub unsafe extern "C" fn jc_hash_message(alg: i32, msg_ptr: *const u8, msg_len: usize) -> JCResult {
     let algorithm = match algorithms::Algorithm::from_i32(alg) {
         Some(a) => a,
         None => return helpers::make_error(errors::JC_ERR_UNSUPPORTED_ALGO),
@@ -239,8 +281,14 @@ pub extern "C" fn jc_hash_message(alg: i32, msg_ptr: *const u8, msg_len: usize) 
     algorithms::hash_message(algorithm, message)
 }
 
+/// Computes an HMAC for the provided message and key.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_hmac_message(
+pub unsafe extern "C" fn jc_hmac_message(
     alg: i32,
     msg_ptr: *const u8,
     msg_len: usize,
@@ -262,8 +310,14 @@ pub extern "C" fn jc_hmac_message(
     algorithms::hmac_message(algorithm, message, key)
 }
 
+/// Compares two byte sequences in constant time.
+///
+/// # Safety
+///
+/// All non-null pointer arguments must reference readable buffers of the
+/// corresponding lengths for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_constant_time_eq(
+pub unsafe extern "C" fn jc_constant_time_eq(
     left_ptr: *const u8,
     left_len: usize,
     right_ptr: *const u8,
@@ -297,8 +351,14 @@ pub extern "C" fn jc_stream_init_hash(alg: i32) -> *mut JCContext {
     }
 }
 
+/// Initializes a streaming HMAC context.
+///
+/// # Safety
+///
+/// If `key_ptr` is non-null, it must reference `key_len` readable bytes for the
+/// duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_stream_init_hmac(
+pub unsafe extern "C" fn jc_stream_init_hmac(
     alg: i32,
     key_ptr: *const u8,
     key_len: usize,
@@ -317,8 +377,15 @@ pub extern "C" fn jc_stream_init_hmac(
     }
 }
 
+/// Feeds additional bytes into a streaming context.
+///
+/// # Safety
+///
+/// `ctx` must be a valid context pointer returned by this library and not yet
+/// finalized or freed. If `data_ptr` is non-null, it must reference `data_len`
+/// readable bytes for the duration of the call.
 #[no_mangle]
-pub extern "C" fn jc_stream_update(
+pub unsafe extern "C" fn jc_stream_update(
     ctx: *mut JCContext,
     data_ptr: *const u8,
     data_len: usize,

@@ -18,7 +18,13 @@ impl JCBuffer {
         }
     }
 
-    /// Converts a pointer + length FFI inputs into a slice safely
+    /// Converts an FFI pointer and length pair into a borrowed slice.
+    ///
+    /// # Safety
+    ///
+    /// If `ptr` is non-null, it must point to `len` bytes of memory that are
+    /// readable for the duration of the returned borrow. The referenced memory
+    /// must not be mutated concurrently while the returned slice is alive.
     pub unsafe fn as_slice<'a>(ptr: *const u8, len: usize) -> Result<&'a [u8], i32> {
         if ptr.is_null() {
             if len == 0 {
