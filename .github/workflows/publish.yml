@@ -1,0 +1,66 @@
+name: Publish to pub.dev
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.89.0
+          components: rustfmt, clippy
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Validate Rust backend
+        run: |
+          cd native
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo build
+          cargo test
+
+      - name: Validate Dart package
+        run: |
+          dart analyze .
+          dart test
+          dart run example/just_crypto_example.dart
+          dart pub publish --dry-run
+
+      - name: Validate release artifacts
+        run: |
+          test -f LICENSE
+          test -f CHANGELOG.md
+          test -f README.md
+
+      - name: Configure pub.dev credentials
+        env:
+          PUB_DEV_CREDENTIALS: ${{ secrets.PUB_DEV_CREDENTIALS }}
+        run: |
+          if [ -z "$PUB_DEV_CREDENTIALS" ]; then
+            echo "Missing PUB_DEV_CREDENTIALS secret"
+            exit 1
+          fi
+          mkdir -p "$HOME/.pub-cache"
+          printf '%s' "$PUB_DEV_CREDENTIALS" > "$HOME/.pub-cache/credentials.json"
+
+      - name: Publish
+        env:
+          PUB_ENVIRONMENT: bot.github-actions
+        run: dart pub publish --force

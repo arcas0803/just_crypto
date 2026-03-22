@@ -1,0 +1,13 @@
+pub const JC_SUCCESS: i32 = 0;
+pub const JC_ERR_INVALID_PARAM: i32 = -1;
+pub const JC_ERR_INVALID_KEY_SIZE: i32 = -2;
+pub const JC_ERR_INVALID_NONCE_SIZE: i32 = -3;
+pub const JC_ERR_DECRYPTION_FAILED: i32 = -4;
+pub const JC_ERR_ALLOCATION_FAILED: i32 = -5;
+pub const JC_ERR_UNSUPPORTED_ALGO: i32 = -6;
+pub const JC_ERR_INVALID_SIGNATURE: i32 = -7;
+pub const JC_ERR_INVALID_POINTER: i32 = -8;
+pub const JC_ERR_INVALID_STATE: i32 = -9;
+pub const JC_ERR_INVALID_IV_SIZE: i32 = -10;
+pub const JC_ERR_INVALID_SALT_SIZE: i32 = -11;
+pub const JC_ERR_UNKNOWN: i32 = -99;
