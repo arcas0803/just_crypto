@@ -84,7 +84,7 @@ fn aes256_gcm_encrypt(message: &[u8], key: &[u8], nonce: &[u8], aad: &[u8]) -> c
     let cipher = Aes256Gcm::new(AesKey::<Aes256Gcm>::from_slice(key));
     let n = AesNonce::from_slice(nonce);
     let payload = Payload { msg: message, aad };
-    
+
     match cipher.encrypt(n, payload) {
         Ok(ciphertext) => crate::helpers::make_success(ciphertext),
         Err(_) => crate::helpers::make_error(crate::errors::JC_ERR_UNKNOWN),
@@ -101,15 +101,23 @@ fn aes256_gcm_decrypt(ciphertext: &[u8], key: &[u8], nonce: &[u8], aad: &[u8]) -
 
     let cipher = Aes256Gcm::new(AesKey::<Aes256Gcm>::from_slice(key));
     let n = AesNonce::from_slice(nonce);
-    let payload = Payload { msg: ciphertext, aad };
-    
+    let payload = Payload {
+        msg: ciphertext,
+        aad,
+    };
+
     match cipher.decrypt(n, payload) {
         Ok(plaintext) => crate::helpers::make_success(plaintext),
         Err(_) => crate::helpers::make_error(crate::errors::JC_ERR_DECRYPTION_FAILED),
     }
 }
 
-fn chacha20_poly1305_encrypt(message: &[u8], key: &[u8], nonce: &[u8], aad: &[u8]) -> crate::JCResult {
+fn chacha20_poly1305_encrypt(
+    message: &[u8],
+    key: &[u8],
+    nonce: &[u8],
+    aad: &[u8],
+) -> crate::JCResult {
     if key.len() != 32 {
         return crate::helpers::make_error(crate::errors::JC_ERR_INVALID_KEY_SIZE);
     }
@@ -120,14 +128,19 @@ fn chacha20_poly1305_encrypt(message: &[u8], key: &[u8], nonce: &[u8], aad: &[u8
     let cipher = ChaCha20Poly1305::new(ChaChaKey::from_slice(key));
     let n = ChaChaNonce::from_slice(nonce);
     let payload = Payload { msg: message, aad };
-    
+
     match cipher.encrypt(n, payload) {
         Ok(ciphertext) => crate::helpers::make_success(ciphertext),
         Err(_) => crate::helpers::make_error(crate::errors::JC_ERR_UNKNOWN),
     }
 }
 
-fn chacha20_poly1305_decrypt(ciphertext: &[u8], key: &[u8], nonce: &[u8], aad: &[u8]) -> crate::JCResult {
+fn chacha20_poly1305_decrypt(
+    ciphertext: &[u8],
+    key: &[u8],
+    nonce: &[u8],
+    aad: &[u8],
+) -> crate::JCResult {
     if key.len() != 32 {
         return crate::helpers::make_error(crate::errors::JC_ERR_INVALID_KEY_SIZE);
     }
@@ -137,8 +150,11 @@ fn chacha20_poly1305_decrypt(ciphertext: &[u8], key: &[u8], nonce: &[u8], aad: &
 
     let cipher = ChaCha20Poly1305::new(ChaChaKey::from_slice(key));
     let n = ChaChaNonce::from_slice(nonce);
-    let payload = Payload { msg: ciphertext, aad };
-    
+    let payload = Payload {
+        msg: ciphertext,
+        aad,
+    };
+
     match cipher.decrypt(n, payload) {
         Ok(plaintext) => crate::helpers::make_success(plaintext),
         Err(_) => crate::helpers::make_error(crate::errors::JC_ERR_DECRYPTION_FAILED),
@@ -243,23 +259,14 @@ fn aes256_cbc_decrypt(ciphertext: &[u8], key: &[u8], iv: &[u8]) -> crate::JCResu
     result
 }
 
-pub fn sign(
-    algorithm: Algorithm,
-    message: &[u8],
-    priv_key: &[u8],
-) -> crate::JCResult {
+pub fn sign(algorithm: Algorithm, message: &[u8], priv_key: &[u8]) -> crate::JCResult {
     match algorithm {
         Algorithm::Ed25519 => ed25519_sign(message, priv_key),
         _ => crate::helpers::make_error(crate::errors::JC_ERR_UNSUPPORTED_ALGO),
     }
 }
 
-pub fn verify(
-    algorithm: Algorithm,
-    message: &[u8],
-    sig: &[u8],
-    pub_key: &[u8],
-) -> i32 {
+pub fn verify(algorithm: Algorithm, message: &[u8], sig: &[u8], pub_key: &[u8]) -> i32 {
     match algorithm {
         Algorithm::Ed25519 => ed25519_verify(message, sig, pub_key),
         _ => crate::errors::JC_ERR_UNSUPPORTED_ALGO,
@@ -282,7 +289,7 @@ fn ed25519_sign(message: &[u8], priv_key: &[u8]) -> crate::JCResult {
 }
 
 fn ed25519_verify(message: &[u8], sig: &[u8], pub_key: &[u8]) -> i32 {
-    use ed25519_dalek::{Verifier, VerifyingKey, Signature};
+    use ed25519_dalek::{Signature, Verifier, VerifyingKey};
     let signature = match Signature::from_slice(sig) {
         Ok(s) => s,
         Err(_) => return crate::errors::JC_ERR_INVALID_SIGNATURE,
@@ -307,7 +314,14 @@ pub fn derive_key(
     output_length: u32,
 ) -> crate::JCResult {
     match algorithm {
-        Algorithm::Argon2id => argon2id_derive(input, salt, memory_cost, time_cost, parallelism, output_length),
+        Algorithm::Argon2id => argon2id_derive(
+            input,
+            salt,
+            memory_cost,
+            time_cost,
+            parallelism,
+            output_length,
+        ),
         _ => crate::helpers::make_error(crate::errors::JC_ERR_UNSUPPORTED_ALGO),
     }
 }
@@ -331,7 +345,11 @@ fn argon2id_derive(
         if memory_cost == 0 { 65536 } else { memory_cost },
         if time_cost == 0 { 3 } else { time_cost },
         if parallelism == 0 { 4 } else { parallelism },
-        if output_length == 0 { Some(32) } else { Some(output_length as usize) },
+        if output_length == 0 {
+            Some(32)
+        } else {
+            Some(output_length as usize)
+        },
     ) {
         Ok(p) => p,
         Err(_) => {
@@ -342,9 +360,20 @@ fn argon2id_derive(
     };
 
     let argon2 = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
-    let mut output = vec![0u8; if output_length == 0 { 32 } else { output_length as usize }];
+    let mut output = vec![
+        0u8;
+        if output_length == 0 {
+            32
+        } else {
+            output_length as usize
+        }
+    ];
 
-    let result = match argon2.hash_password_into(password_copy.as_slice(), salt_copy.as_slice(), &mut output) {
+    let result = match argon2.hash_password_into(
+        password_copy.as_slice(),
+        salt_copy.as_slice(),
+        &mut output,
+    ) {
         Ok(_) => crate::helpers::make_success(output),
         Err(_) => crate::helpers::make_error(crate::errors::JC_ERR_INVALID_PARAM),
     };
@@ -370,17 +399,17 @@ pub fn generate_key_pair(algorithm: Algorithm) -> crate::JCResult {
             keypair_bytes.extend_from_slice(signing_key.as_bytes()); // 32 bytes private
             keypair_bytes.extend_from_slice(signing_key.verifying_key().as_bytes()); // 32 bytes public
             crate::helpers::make_success(keypair_bytes)
-        },
+        }
         Algorithm::X25519 => {
-            use x25519_dalek::{StaticSecret, PublicKey};
             use rand_core::OsRng;
+            use x25519_dalek::{PublicKey, StaticSecret};
             let secret = StaticSecret::random_from_rng(OsRng);
             let public = PublicKey::from(&secret);
             let mut keypair_bytes = Vec::with_capacity(64);
             keypair_bytes.extend_from_slice(secret.to_bytes().as_ref()); // 32 bytes private
             keypair_bytes.extend_from_slice(public.as_bytes()); // 32 bytes public
             crate::helpers::make_success(keypair_bytes)
-        },
+        }
         _ => crate::helpers::make_error(crate::errors::JC_ERR_UNSUPPORTED_ALGO),
     }
 }
@@ -418,7 +447,7 @@ fn x25519_derive_shared_secret(private_key: &[u8], public_key: &[u8]) -> crate::
 pub fn hash_message(algorithm: Algorithm, message: &[u8]) -> crate::JCResult {
     match algorithm {
         Algorithm::Sha256 => {
-            use sha2::{Sha256, Digest};
+            use sha2::{Digest, Sha256};
             crate::helpers::make_success(Sha256::digest(message).to_vec())
         }
         Algorithm::Blake3 => {
@@ -446,7 +475,7 @@ pub fn hmac_message(algorithm: Algorithm, message: &[u8], key: &[u8]) -> crate::
             let result = crate::helpers::make_success(mac.finalize().into_bytes().to_vec());
             key_copy.zeroize();
             result
-        },
+        }
         _ => crate::helpers::make_error(crate::errors::JC_ERR_UNSUPPORTED_ALGO),
     }
 }
@@ -503,12 +532,10 @@ mod tests {
         let alice_shared = derive_shared_secret(Algorithm::X25519, alice_private, bob_public);
         let bob_shared = derive_shared_secret(Algorithm::X25519, bob_private, alice_public);
 
-        let alice_shared_bytes = unsafe {
-            std::slice::from_raw_parts(alice_shared.buffer.ptr, alice_shared.buffer.len)
-        };
-        let bob_shared_bytes = unsafe {
-            std::slice::from_raw_parts(bob_shared.buffer.ptr, bob_shared.buffer.len)
-        };
+        let alice_shared_bytes =
+            unsafe { std::slice::from_raw_parts(alice_shared.buffer.ptr, alice_shared.buffer.len) };
+        let bob_shared_bytes =
+            unsafe { std::slice::from_raw_parts(bob_shared.buffer.ptr, bob_shared.buffer.len) };
 
         assert_eq!(alice_shared_bytes, bob_shared_bytes);
 
@@ -527,15 +554,13 @@ mod tests {
 
         let encrypted = encrypt(Algorithm::Aes256Gcm, message, &key, &nonce, &aad);
         assert_eq!(encrypted.code, crate::errors::JC_SUCCESS);
-        let encrypted_bytes = unsafe {
-            std::slice::from_raw_parts(encrypted.buffer.ptr, encrypted.buffer.len)
-        };
+        let encrypted_bytes =
+            unsafe { std::slice::from_raw_parts(encrypted.buffer.ptr, encrypted.buffer.len) };
 
         let decrypted = decrypt(Algorithm::Aes256Gcm, encrypted_bytes, &key, &nonce, &aad);
         assert_eq!(decrypted.code, crate::errors::JC_SUCCESS);
-        let decrypted_bytes = unsafe {
-            std::slice::from_raw_parts(decrypted.buffer.ptr, decrypted.buffer.len)
-        };
+        let decrypted_bytes =
+            unsafe { std::slice::from_raw_parts(decrypted.buffer.ptr, decrypted.buffer.len) };
 
         assert_eq!(decrypted_bytes, message);
 
@@ -572,26 +597,22 @@ mod tests {
 
         let encrypted128 = encrypt(Algorithm::Aes128Cbc, message, &key128, &iv, &[]);
         assert_eq!(encrypted128.code, crate::errors::JC_SUCCESS);
-        let encrypted128_bytes = unsafe {
-            std::slice::from_raw_parts(encrypted128.buffer.ptr, encrypted128.buffer.len)
-        };
+        let encrypted128_bytes =
+            unsafe { std::slice::from_raw_parts(encrypted128.buffer.ptr, encrypted128.buffer.len) };
         let decrypted128 = decrypt(Algorithm::Aes128Cbc, encrypted128_bytes, &key128, &iv, &[]);
         assert_eq!(decrypted128.code, crate::errors::JC_SUCCESS);
-        let decrypted128_bytes = unsafe {
-            std::slice::from_raw_parts(decrypted128.buffer.ptr, decrypted128.buffer.len)
-        };
+        let decrypted128_bytes =
+            unsafe { std::slice::from_raw_parts(decrypted128.buffer.ptr, decrypted128.buffer.len) };
         assert_eq!(decrypted128_bytes, message);
 
         let encrypted256 = encrypt(Algorithm::Aes256Cbc, message, &key256, &iv, &[]);
         assert_eq!(encrypted256.code, crate::errors::JC_SUCCESS);
-        let encrypted256_bytes = unsafe {
-            std::slice::from_raw_parts(encrypted256.buffer.ptr, encrypted256.buffer.len)
-        };
+        let encrypted256_bytes =
+            unsafe { std::slice::from_raw_parts(encrypted256.buffer.ptr, encrypted256.buffer.len) };
         let decrypted256 = decrypt(Algorithm::Aes256Cbc, encrypted256_bytes, &key256, &iv, &[]);
         assert_eq!(decrypted256.code, crate::errors::JC_SUCCESS);
-        let decrypted256_bytes = unsafe {
-            std::slice::from_raw_parts(decrypted256.buffer.ptr, decrypted256.buffer.len)
-        };
+        let decrypted256_bytes =
+            unsafe { std::slice::from_raw_parts(decrypted256.buffer.ptr, decrypted256.buffer.len) };
         assert_eq!(decrypted256_bytes, message);
 
         crate::helpers::jc_buffer_free(encrypted128.buffer);
@@ -604,9 +625,8 @@ mod tests {
     fn ed25519_signature_tampering_is_rejected() {
         let keypair = generate_key_pair(Algorithm::Ed25519);
         assert_eq!(keypair.code, crate::errors::JC_SUCCESS);
-        let keypair_bytes = unsafe {
-            std::slice::from_raw_parts(keypair.buffer.ptr, keypair.buffer.len)
-        };
+        let keypair_bytes =
+            unsafe { std::slice::from_raw_parts(keypair.buffer.ptr, keypair.buffer.len) };
         let private_key = &keypair_bytes[..32];
         let public_key = &keypair_bytes[32..64];
         let message = b"signature tamper";
@@ -633,5 +653,3 @@ mod tests {
         assert!(!constant_time_equals(b"same", b"different"));
     }
 }
-
-

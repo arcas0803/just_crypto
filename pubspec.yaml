@@ -1,6 +1,6 @@
 name: just_crypto
 description: Dart cryptography package backed by Rust native assets, with domain-specific APIs, typed key material, isolates, and cross-platform validation.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/arcas0803/just_crypto
 repository: https://github.com/arcas0803/just_crypto
 issue_tracker: https://github.com/arcas0803/just_crypto/issues

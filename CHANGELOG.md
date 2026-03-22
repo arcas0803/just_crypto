@@ -1,17 +1,10 @@
 ## Unreleased
 
-- Added a domain-oriented public API in [lib/src/just_crypto_base.dart](lib/src/just_crypto_base.dart) for AEAD, CBC interoperability, signatures, key agreement, KDF, hashes, and MACs while preserving the original generic API for compatibility.
-- Added domain-specific key, nonce, IV, and MAC-key generators so new code can avoid the enum-driven compatibility helpers.
-- Added typed wrappers for key material, nonces, IVs, salts, signatures, and shared secrets in [lib/src/types.dart](lib/src/types.dart).
-- Added DartDoc documentation with professional usage examples across the public Dart API and marked the generic compatibility surface as deprecated for new code.
-- Added constant-time byte comparison and isolate wrappers for hash, HMAC, and comparison operations.
-- Added automatic native cleanup for streaming contexts through a native finalizer in [lib/src/just_crypto_base.dart](lib/src/just_crypto_base.dart).
-- Hardened KDF and signature validation in Dart and extended the public error model with salt-size validation in [lib/src/errors.dart](lib/src/errors.dart).
-- Added explicit zeroization of native buffers and sensitive temporary Rust copies in [native/src/helpers.rs](native/src/helpers.rs) and [native/src/algorithms.rs](native/src/algorithms.rs).
-- Added native Rust unit tests for regression-sensitive crypto flows in [native/src/algorithms.rs](native/src/algorithms.rs).
-- Added interoperability coverage against `package:cryptography` plus broader roundtrip, tamper, and chunk-boundary property tests in [test/just_crypto_test.dart](test/just_crypto_test.dart).
-- Rewrote [README.md](README.md) to match the real V1 scope, public security posture, and package-facing documentation.
-- Added repository governance files including [LICENSE](LICENSE), issue templates under [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE), and a release checklist in [.github/RELEASE_CHECKLIST.md](.github/RELEASE_CHECKLIST.md).
+## 1.0.1
+
+- Added `x86_64-unknown-linux-gnu` to [native/rust-toolchain.toml](native/rust-toolchain.toml) so Linux GitHub Actions runners can build native assets during publish validation.
+- Applied canonical Rust formatting across native sources so `cargo fmt --check` no longer fails in CI or publish jobs.
+- Bumped the package version in [pubspec.yaml](pubspec.yaml) and [native/Cargo.toml](native/Cargo.toml) to keep release metadata aligned.
 
 ## 1.0.0
 

@@ -1,6 +1,6 @@
 use crate::algorithms::Algorithm;
-use sha2::Digest;
 use hmac::Mac;
+use sha2::Digest;
 
 pub enum StreamState {
     Sha256(sha2::Sha256),
@@ -22,7 +22,7 @@ pub fn init_hmac(algorithm: Algorithm, key: &[u8]) -> Result<StreamState, i32> {
             let mac = <hmac::Hmac<sha2::Sha256> as hmac::Mac>::new_from_slice(key)
                 .map_err(|_| crate::errors::JC_ERR_INVALID_KEY_SIZE)?;
             Ok(StreamState::HmacSha256(mac))
-        },
+        }
         _ => Err(crate::errors::JC_ERR_UNSUPPORTED_ALGO),
     }
 }
@@ -30,7 +30,9 @@ pub fn init_hmac(algorithm: Algorithm, key: &[u8]) -> Result<StreamState, i32> {
 pub fn update(state: &mut StreamState, data: &[u8]) {
     match state {
         StreamState::Sha256(hasher) => hasher.update(data),
-        StreamState::Blake3(hasher) => { hasher.update(data); },
+        StreamState::Blake3(hasher) => {
+            hasher.update(data);
+        }
         StreamState::HmacSha256(mac) => mac.update(data),
     }
 }

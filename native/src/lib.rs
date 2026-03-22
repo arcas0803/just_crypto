@@ -94,7 +94,6 @@ pub extern "C" fn jc_decrypt(
     algorithms::decrypt(algorithm, message, key, nonce, aad)
 }
 
-
 #[no_mangle]
 pub extern "C" fn jc_sign(
     alg: i32,
@@ -147,7 +146,7 @@ pub extern "C" fn jc_verify(
         Ok(bytes) => bytes,
         Err(code) => return code,
     };
-    
+
     algorithms::verify(algorithm, message, sig, pub_key)
 }
 
@@ -177,7 +176,15 @@ pub extern "C" fn jc_derive_key(
         Err(code) => return helpers::make_error(code),
     };
 
-    algorithms::derive_key(algorithm, input, salt, memory_cost, time_cost, parallelism, output_length)
+    algorithms::derive_key(
+        algorithm,
+        input,
+        salt,
+        memory_cost,
+        time_cost,
+        parallelism,
+        output_length,
+    )
 }
 
 #[no_mangle]
@@ -220,11 +227,7 @@ pub extern "C" fn jc_shared_secret(
 }
 
 #[no_mangle]
-pub extern "C" fn jc_hash_message(
-    alg: i32,
-    msg_ptr: *const u8,
-    msg_len: usize,
-) -> JCResult {
+pub extern "C" fn jc_hash_message(alg: i32, msg_ptr: *const u8, msg_len: usize) -> JCResult {
     let algorithm = match algorithms::Algorithm::from_i32(alg) {
         Some(a) => a,
         None => return helpers::make_error(errors::JC_ERR_UNSUPPORTED_ALGO),
@@ -295,7 +298,11 @@ pub extern "C" fn jc_stream_init_hash(alg: i32) -> *mut JCContext {
 }
 
 #[no_mangle]
-pub extern "C" fn jc_stream_init_hmac(alg: i32, key_ptr: *const u8, key_len: usize) -> *mut JCContext {
+pub extern "C" fn jc_stream_init_hmac(
+    alg: i32,
+    key_ptr: *const u8,
+    key_len: usize,
+) -> *mut JCContext {
     let algorithm = match algorithms::Algorithm::from_i32(alg) {
         Some(a) => a,
         None => return std::ptr::null_mut(),
@@ -311,7 +318,11 @@ pub extern "C" fn jc_stream_init_hmac(alg: i32, key_ptr: *const u8, key_len: usi
 }
 
 #[no_mangle]
-pub extern "C" fn jc_stream_update(ctx: *mut JCContext, data_ptr: *const u8, data_len: usize) -> i32 {
+pub extern "C" fn jc_stream_update(
+    ctx: *mut JCContext,
+    data_ptr: *const u8,
+    data_len: usize,
+) -> i32 {
     if ctx.is_null() {
         return errors::JC_ERR_INVALID_STATE;
     }
@@ -337,6 +348,8 @@ pub extern "C" fn jc_stream_finalize(ctx: *mut JCContext) -> JCResult {
 #[no_mangle]
 pub extern "C" fn jc_stream_free(ctx: *mut JCContext) {
     if !ctx.is_null() {
-        unsafe { let _ = Box::from_raw(ctx as *mut streaming::StreamState); }
+        unsafe {
+            let _ = Box::from_raw(ctx as *mut streaming::StreamState);
+        }
     }
 }
